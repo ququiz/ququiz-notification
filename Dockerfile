@@ -12,7 +12,7 @@ RUN npm install
 COPY . .
 
 # Copy .env file
-COPY .env ./
+# COPY .env ./
 
 # Default command to run when container starts
 # Tunggu 30 detik, nunggu RabbitMQ
