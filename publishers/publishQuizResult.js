@@ -1,11 +1,3 @@
-/*
-  Ini untuk testing only.
-  Publisher ini akan mengirimkan pesan ke RabbitMQ.
-
-  Jalankan ini dengan perintah:
-    node publishQuizResult.js
-*/
-
 require('dotenv').config();
 const amqp = require('amqplib');
 

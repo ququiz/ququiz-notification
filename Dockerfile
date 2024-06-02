@@ -16,4 +16,4 @@ COPY .env ./
 
 # Default command to run when container starts
 # Tunggu 30 detik, nunggu RabbitMQ
-CMD ["sh", "-c", "sleep 30 && node consumer.js"]
+CMD ["sh", "-c", "sleep 30 && node main.js"]
