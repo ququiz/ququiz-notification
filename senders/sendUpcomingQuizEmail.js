@@ -31,42 +31,55 @@ const timeDict = {
 };
 
 async function sendUpcomingQuizEmail(rabbitMessage, transporter, senderEmail) {
-  // Convert string of message rabbitmq to object
-  let msgObj = JSON.parse(rabbitMessage);
+  try {
+    // Convert string of message rabbitmq to object
+    let msgObj = JSON.parse(rabbitMessage);
 
-  // Dapatkan participants
-  let participants = msgObj.participants;
+    // Validate the structure of msgObj
+    if (!msgObj.time || !msgObj.name || !Array.isArray(msgObj.participants)) {
+      throw new Error("Invalid message format");
+    }
+  
+    // Dapatkan participants
+    let participants = msgObj.participants;
 
-  // Kirim email ke setiap participant
-  participants.forEach((participant) => {
-    const htmlContent = mustache.render(upcomingQuizEmailTemplate, {
-      name: participant.name,
-      quizName: msgObj.name,
-      timeLeft: timeDict[msgObj.time],
+    // Send email to each participant
+    const emailPromises = participants.map((participant) => {
+      const htmlContent = mustache.render(upcomingQuizEmailTemplate, {
+        name: participant.name,
+        quizName: msgObj.name,
+        timeLeft: timeDict[msgObj.time],
+      });
+
+      const emailOptions = {
+        from: `QuQuiz <${senderEmail}>`,
+        to: participant.email,
+        subject: "Upcoming Quiz!",
+        html: htmlContent,
+        attachments: [
+          {
+            filename: "ququiz_logo.png",
+            path: "./assets/ququiz_logo.png",
+            cid: "ququizLogo@ququiz",
+          },
+        ],
+      };
+
+      return transporter.sendMail(emailOptions)
+        .then(info => {
+          console.log(`Email sent to ${participant.email}: ${info.response}`);
+        })
+        .catch(error => {
+          console.error(`Error sending email to ${participant.email}:`, error);
+        });
     });
 
-    const emailOptions = {
-      from: `QuQuiz <${senderEmail}>`,
-      to: participant.email,
-      subject: "Upcoming Quiz!",
-      html: htmlContent,
-      attachments: [
-        {
-          filename: "ququiz_logo.png",
-          path: "./assets/ququiz_logo.png",
-          cid: "ququizLogo@ququiz",
-        },
-      ],
-    };
-
-    transporter.sendMail(emailOptions, (error, info) => {
-      if (error) {
-        console.error("Error:", error);
-      } else {
-        console.log("Email sent: " + info.response);
-      }
-    });
-  });
+    // Await all email send promises
+    await Promise.all(emailPromises);
+    console.log("All emails processed");
+  } catch (error) {
+    console.error("Error processing message:", error);
+  }
 }
 
 module.exports = sendUpcomingQuizEmail;

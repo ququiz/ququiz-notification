@@ -14,8 +14,15 @@ async function consumer(amqp, queue, callback, transporter, senderEmail) {
     channel.consume(
       queue,
       (msg) => {
-        callback(msg.content.toString(), transporter, senderEmail);
-        channel.ack(msg);
+        if (msg !== null) {
+          try {
+            callback(msg.content.toString(), transporter, senderEmail);
+            channel.ack(msg);
+          } catch (callbackError) {
+            console.error("Error in callback:", callbackError);
+            channel.nack(msg, false, false); 
+          }
+        }
       },
       {
         noAck: false,

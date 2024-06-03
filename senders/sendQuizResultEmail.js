@@ -46,109 +46,123 @@ const maxLeaderboardRows = 5;
 */
 
 async function sendQuizResultEmail(rabbitMessage, transporter, senderEmail) {
-  // Convert string of message rabbitmq to object
-  let msgObj = JSON.parse(rabbitMessage);
+  try {
+    // Convert string of message rabbitmq to object
+    let msgObj = JSON.parse(rabbitMessage);
 
-  // Dapatkan leaderboard array
-  let leaderboards = msgObj.leaderboard.leaderboards;
+    // Validate the structure of msgObj
+    if (!Array.isArray(msgObj.user_emails) || !msgObj.leaderboard) {
+      throw new Error("Invalid message format");
+    }
+  
+    // Dapatkan leaderboard array
+    let leaderboards = msgObj.leaderboard.leaderboards;
+  
+    // Sort leaderboards by rank (memastikan)
+    leaderboards.sort((a, b) => a.rank - b.rank);
+  
+    // Make array of object containing user_email in msgObj.user_emails and their username from leaderboards
+    let participants = [];
+    msgObj.user_emails.forEach((email) => {
+      let participant = leaderboards.find((leaderboard) => leaderboard.email === email);
+      if (participant) {
+        participants.push({
+          email: participant.email,
+          username: participant.username,
+          rank: participant.rank,
+          score: participant.score,
+        });
+      } else {
+        // Emailnya ada di msgObj.user_emails tapi tidak ada di leaderboards
+        participants.push({
+          email: email,
+          username: email,
+          rank: 1000, // Set rank to 1000 if user not found in leaderboards
+          score: 0,
+        });
+      }
+    });
+  
+    // Build normal table rows that share for participants > rank 5 (without strong row)
+    let leaderboardTableRowsNormalHtml = "";
+    
+    leaderboards.some((leaderboard) => {
+      if (leaderboard.rank > maxLeaderboardRows) {
+        return true;
+      }
+      let row = rowNormal;
+      leaderboardTableRowsNormalHtml += mustache.render(row, {
+        rank: leaderboard.rank,
+        username: leaderboard.username,
+        score: leaderboard.score,
+      });
+    });
 
-  // Sort leaderboards by rank (memastikan)
-  leaderboards.sort((a, b) => a.rank - b.rank);
+    // Send email to each participant
+    const emailPromises = participants.map((participant) => {
+      let leaderboardTableRows = leaderboardTableRowsNormalHtml;
 
-  // Make array of object containing user_email in msgObj.user_emails and their username from leaderboards
-  let participants = [];
-  msgObj.user_emails.forEach((email) => {
-    let participant = leaderboards.find((leaderboard) => leaderboard.email === email);
-    if (participant) {
-      participants.push({
-        email: participant.email,
+      // Build strong table rows for participant with rank <= 5
+      if (participant.rank <= maxLeaderboardRows) {
+        let leaderboardTableRowsStrongHtml = "";
+
+        // Build table row containing strong row for participant
+        leaderboards.some((leaderboard) => {
+          if (leaderboard.rank > maxLeaderboardRows) {
+            return true;
+          }
+          let row = rowNormal;
+          if (leaderboard.rank === participant.rank) {
+            row = rowStrong;
+          }
+          leaderboardTableRowsStrongHtml += mustache.render(row, {
+            rank: leaderboard.rank,
+            username: leaderboard.username,
+            score: leaderboard.score,
+          });
+        });
+
+        leaderboardTableRows = leaderboardTableRowsStrongHtml;      
+      }
+
+      const htmlContent = mustache.render(quizResultEmailTemplate, {
         username: participant.username,
         rank: participant.rank,
         score: participant.score,
+        quizName: msgObj.leaderboard.quiz_name,
+        leaderboardTableRows: leaderboardTableRows,
       });
-    } else {
-      // Emailnya ada di msgObj.user_emails tapi tidak ada di leaderboards
-      participants.push({
-        email: email,
-        username: email,
-        rank: 1000, // Set rank to 1000 if user not found in leaderboards
-        score: 0,
-      });
-    }
-  });
 
-  // Build normal table rows that share for participants > rank 5 (without strong row)
-  let leaderboardTableRowsNormalHtml = "";
-  
-  leaderboards.some((leaderboard) => {
-    if (leaderboard.rank > maxLeaderboardRows) {
-      return true;
-    }
-    let row = rowNormal;
-    leaderboardTableRowsNormalHtml += mustache.render(row, {
-      rank: leaderboard.rank,
-      username: leaderboard.username,
-      score: leaderboard.score,
-    });
-  });
+      const emailOptions = {
+        from: `QuQuiz <${senderEmail}>`,
+        to: participant.email,
+        subject: "Quiz Result",
+        html: htmlContent,
+        attachments: [
+          {
+            filename: "ququiz_logo.png",
+            path: "./assets/ququiz_logo.png",
+            cid: "ququizLogo@ququiz",
+          },
+        ],
+      };
 
-  // Kirim email ke setiap participant
-  participants.forEach((participant) => {
-    let leaderboardTableRows = leaderboardTableRowsNormalHtml;
-
-    // Build strong table rows for participant with rank <= 5
-    if (participant.rank <= maxLeaderboardRows) {
-      let leaderboardTableRowsStrongHtml = "";
-
-      // Build table row containing strong row for participant
-      leaderboards.some((leaderboard) => {
-        if (leaderboard.rank > maxLeaderboardRows) {
-          return true;
-        }
-        let row = rowNormal;
-        if (leaderboard.rank === participant.rank) {
-          row = rowStrong;
-        }
-        leaderboardTableRowsStrongHtml += mustache.render(row, {
-          rank: leaderboard.rank,
-          username: leaderboard.username,
-          score: leaderboard.score,
+      return transporter.sendMail(emailOptions)
+        .then(info => {
+          console.log(`Email sent to ${participant.email}: ${info.response}`);
+        })
+        .catch(error => {
+          console.error(`Error sending email to ${participant.email}:`, error);
         });
-      });
-
-      leaderboardTableRows = leaderboardTableRowsStrongHtml;      
-    }
-
-    const htmlContent = mustache.render(quizResultEmailTemplate, {
-      username: participant.username,
-      rank: participant.rank,
-      score: participant.score,
-      quizName: msgObj.leaderboard.quiz_name,
-      leaderboardTableRows: leaderboardTableRows,
     });
 
-    const emailOptions = {
-      from: `QuQuiz <${senderEmail}>`,
-      to: participant.email,
-      subject: "Quiz Result",
-      html: htmlContent,
-      attachments: [
-        {
-          filename: "ququiz_logo.png",
-          path: "./assets/ququiz_logo.png",
-          cid: "ququizLogo@ququiz",
-        },
-      ],
-    };
+    // Await all email send promises
+    await Promise.all(emailPromises);
+    console.log("All emails processed");
+  } catch (error) {
+    console.error("Error processing message:", error);
+  }
 
-    transporter.sendMail(emailOptions, (error, info) => {
-      if (error) {
-        console.error("Error:", error);
-      } else {
-        console.log("Email sent: " + info.response);
-      }
-    });
-  });
 }
 
 module.exports = sendQuizResultEmail;
