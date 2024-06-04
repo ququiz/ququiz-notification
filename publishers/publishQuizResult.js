@@ -3,11 +3,12 @@ const amqp = require("amqplib");
 
 async function publishQuizResult() {
   try {
-    const rabbitmqHost = process.env.RABBITMQ_HOST || "rabbitmq";
-    const queue = process.env.QUEUE_QUIZ_RESULT || "quiz_result";
-
+    const rabbitmqHost = process.env.RABBITMQ_HOST;
     const connection = await amqp.connect(`amqp://${rabbitmqHost}`);
     const channel = await connection.createChannel();
+    const exchange = "scoring-notification";
+    const exchangeType = "topic";
+    const routingKey = "quiz-score-notification";
 
     const message = `{
         "user_emails": [
@@ -62,12 +63,11 @@ async function publishQuizResult() {
         }
       }`;
 
-    await channel.assertQueue(queue, {
+    channel.assertExchange(exchange, exchangeType, {
       durable: false,
     });
-
-    channel.sendToQueue(queue, Buffer.from(message));
-    console.log(`[x] Sent ${message}`);
+    channel.publish(exchange, routingKey, Buffer.from(message));
+    console.log(" [x] Sent %s:'%s'", routingKey, message);
 
     setTimeout(() => {
       connection.close();

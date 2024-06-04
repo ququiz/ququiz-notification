@@ -3,12 +3,12 @@ const amqp = require("amqplib");
 
 async function publishUpcomingQuiz() {
   try {
-    const rabbitmqHost = process.env.RABBITMQ_HOST || "rabbitmq";
-    const queue = process.env.QUEUE_UPCOMING_QUIZ || "upcoming_quiz";
-
+    const rabbitmqHost = process.env.RABBITMQ_HOST;
     const connection = await amqp.connect(`amqp://${rabbitmqHost}`);
     const channel = await connection.createChannel();
-
+    const exchange = "quiz.email.exchange";
+    const exchangeType = "direct";
+    const routingKey = "quiz.email.send";
     const message = `{ 
             "time": "D-1", 
             "name": "Quiz Biology 101", 
@@ -24,12 +24,11 @@ async function publishUpcomingQuiz() {
             ]
         }`;
 
-    await channel.assertQueue(queue, {
+    channel.assertExchange(exchange, exchangeType, {
       durable: false,
     });
-
-    channel.sendToQueue(queue, Buffer.from(message));
-    console.log(`[x] Sent ${message}`);
+    channel.publish(exchange, routingKey, Buffer.from(message));
+    console.log(" [x] Sent %s:'%s'", routingKey, message);
 
     setTimeout(() => {
       connection.close();
