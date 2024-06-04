@@ -1,6 +1,6 @@
 async function consumer(amqp, queue, callback, transporter, senderEmail) {
   try {
-    const rabbitmqHost = process.env.RABBITMQ_HOST || "rabbitmq";
+    const rabbitmqHost = process.env.RABBITMQ_HOST || "ququiz-rabbitmq";
 
     const connection = await amqp.connect(`amqp://${rabbitmqHost}`);
     const channel = await connection.createChannel();
@@ -20,7 +20,7 @@ async function consumer(amqp, queue, callback, transporter, senderEmail) {
             channel.ack(msg);
           } catch (callbackError) {
             console.error("Error in callback:", callbackError);
-            channel.nack(msg, false, false); 
+            channel.nack(msg, false, false);
           }
         }
       },
