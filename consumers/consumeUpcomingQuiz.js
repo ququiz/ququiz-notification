@@ -11,7 +11,7 @@ async function consumeUpcomingQuiz(amqp, callback, transporter, senderEmail) {
     const queue = "quiz.email.queue";
 
     await channel.assertExchange(exchange, exhangeType, {
-      durable: false,
+      durable: true,
     });
 
     const q = await channel.assertQueue(queue, { exclusive: true });

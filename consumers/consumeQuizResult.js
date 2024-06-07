@@ -10,7 +10,7 @@ async function consumeQuizResult(amqp, callback, transporter, senderEmail) {
     const routingKey = "quiz-score-notification";
 
     await channel.assertExchange(exchange, exchangeType, {
-      durable: false,
+      durable: true,
     });
 
     const q = await channel.assertQueue('', { exclusive: true });
