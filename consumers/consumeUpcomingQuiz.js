@@ -2,7 +2,7 @@ require("dotenv").config();
 
 async function consumeUpcomingQuiz(amqp, callback, transporter, senderEmail) {
   try {
-    const rabbitmqHost = process.env.RABBITMQ_HOST;
+    const rabbitmqHost = process.env.RABBITMQ_HOST || 'guest:guest@ququiz-rabbitmq:5672';
     const connection = await amqp.connect(`amqp://${rabbitmqHost}`);
     const channel = await connection.createChannel();
     const exchange = "quiz.email.exchange";
