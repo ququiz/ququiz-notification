@@ -11,9 +11,6 @@ RUN npm install
 # Bundle app source
 COPY . .
 
-# Copy .env file
-# COPY .env ./
-
 # Default command to run when container starts
 # Tunggu 30 detik, nunggu RabbitMQ
-CMD ["sh", "-c", "sleep 30 && node main.js"]
+CMD ["sh", "-c", "sleep 20 && node main.js"]
