@@ -7,7 +7,7 @@ async function publishQuizResult() {
     const connection = await amqp.connect(`amqp://${rabbitmqHost}`);
     const channel = await connection.createChannel();
     const exchange = "scoring-notification";
-    const exchangeType = "topic";
+    const exchangeType = "direct";
     const routingKey = "quiz-score-notification";
 
     const message = `{
@@ -64,7 +64,7 @@ async function publishQuizResult() {
       }`;
 
     channel.assertExchange(exchange, exchangeType, {
-      durable: false,
+      durable: true,
     });
     channel.publish(exchange, routingKey, Buffer.from(message));
     console.log(" [x] Sent %s:'%s'", routingKey, message);

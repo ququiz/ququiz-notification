@@ -6,7 +6,7 @@ async function consumeQuizResult(amqp, callback, transporter, senderEmail) {
     const connection = await amqp.connect(`amqp://${rabbitmqHost}`);
     const channel = await connection.createChannel();
     const exchange = "scoring-notification";
-    const exchangeType = "topic";
+    const exchangeType = "direct";
     const routingKey = "quiz-score-notification";
 
     await channel.assertExchange(exchange, exchangeType, {
@@ -35,7 +35,9 @@ async function consumeQuizResult(amqp, callback, transporter, senderEmail) {
     );
   } catch (error) {
     console.error("Error:", error);
-    setTimeout(consumeQuizResult, 10000); // Retry after 10 seconds
+    setTimeout(() => {
+      consumeQuizResult(amqp, callback, transporter, senderEmail);
+    }, 10000); // Retry after 10 seconds
   }
 }
 

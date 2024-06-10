@@ -6,11 +6,11 @@ async function consumeUpcomingQuiz(amqp, callback, transporter, senderEmail) {
     const connection = await amqp.connect(`amqp://${rabbitmqHost}`);
     const channel = await connection.createChannel();
     const exchange = "quiz.email.exchange";
-    const exhangeType = "direct";
+    const exchangeType = "direct";
     const routingKey = "quiz.email.send";
     const queue = "quiz.email.queue";
 
-    await channel.assertExchange(exchange, exhangeType, {
+    await channel.assertExchange(exchange, exchangeType, {
       durable: true,
     });
 
@@ -36,7 +36,9 @@ async function consumeUpcomingQuiz(amqp, callback, transporter, senderEmail) {
     );
   } catch (error) {
     console.error("Error:", error);
-    setTimeout(consumeUpcomingQuiz, 10000); // Retry after 10 seconds
+    setTimeout(() => {
+      consumeUpcomingQuiz(amqp, callback, transporter, senderEmail);
+    }, 10000); // Retry after 10 seconds
   }
 }
 

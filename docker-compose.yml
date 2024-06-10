@@ -1,7 +1,8 @@
 version: "3"
 services:
   rabbitmq:
-    image: rabbitmq:3.8-management-alpine
+    container_name: rabbitmq
+    image: rabbitmq:3.13.1-management
     ports:
       - "5672:5672"
       - "15672:15672"

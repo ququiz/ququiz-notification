@@ -25,7 +25,7 @@ async function publishUpcomingQuiz() {
         }`;
 
     channel.assertExchange(exchange, exchangeType, {
-      durable: false,
+      durable: true,
     });
     channel.publish(exchange, routingKey, Buffer.from(message));
     console.log(" [x] Sent %s:'%s'", routingKey, message);

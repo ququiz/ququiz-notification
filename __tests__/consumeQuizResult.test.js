@@ -39,7 +39,7 @@ describe('consumeQuizResult', () => {
 
     expect(amqp.connect).toHaveBeenCalled();
     expect(mockConnection.createChannel).toHaveBeenCalled();
-    expect(mockChannel.assertExchange).toHaveBeenCalledWith('scoring-notification', 'topic', { durable: true });
+    expect(mockChannel.assertExchange).toHaveBeenCalledWith('scoring-notification', 'direct', { durable: true });
     expect(mockChannel.assertQueue).toHaveBeenCalledWith('', { exclusive: false });
     expect(mockChannel.bindQueue).toHaveBeenCalledWith('test-queue', 'scoring-notification', 'quiz-score-notification');
     expect(mockChannel.consume).toHaveBeenCalled();
