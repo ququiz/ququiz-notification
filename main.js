@@ -16,7 +16,7 @@ const senderEmail = process.env.MAIL_FROM_ADDRESS || 'ququiz.dev@gmail.com';
 const transporter = nodemailer.createTransport({
   host: process.env.MAIL_HOST || 'sandbox.smtp.mailtrap.io',
   port: process.env.MAIL_PORT || 2525,
-  secure: process.env.MAIL_PORT == "465",
+  secure: (process.env.MAIL_PORT || 2525)  == "465",
   auth: {
     user: process.env.MAIL_USERNAME || '1427f83ffe1fef',
     pass: process.env.MAIL_PASSWORD || 'b9d4f47573de85',

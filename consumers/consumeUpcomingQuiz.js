@@ -25,6 +25,7 @@ async function consumeUpcomingQuiz(amqp, callback, transporter, senderEmail) {
       async (msg) => {
         if (msg.content) {
           console.log(" [x] %s: Message Accepted", msg.fields.routingKey);
+          console.log(msg.content.toString());
           try {
             await callback(msg.content.toString(), transporter, senderEmail);
           } catch (err) {
