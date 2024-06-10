@@ -23,6 +23,15 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+// Cek nilai environment variable
+console.log(`RABBITMQ_HOST: ${process.env.MAIL_FROM_ADDRESS}`);
+console.log(`MAIL_HOST: ${process.env.MAIL_HOST}`);
+console.log(`MAIL_PORT: ${process.env.MAIL_PORT}`);
+console.log(`MAIL_USERNAME: ${process.env.MAIL_USERNAME}`);
+console.log(`MAIL_PASSWORD: ${process.env.MAIL_PASSWORD}`);
+console.log(`MAIL_FROM_ADDRESS: ${process.env.MAIL_FROM_ADDRESS}`);
+console.log(`MAIL_FROM_NAME: ${process.env.MAIL_FROM_NAME}`);
+
 // Start consumers
 consumeUpcomingQuiz(amqp, sendUpcomingQuizEmail, transporter, senderEmail);
 consumeQuizResult(amqp, sendQuizResultEmail, transporter, senderEmail);
